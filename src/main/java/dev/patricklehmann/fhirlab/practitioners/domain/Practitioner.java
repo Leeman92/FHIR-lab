@@ -7,17 +7,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.Instant;
-import java.util.UUID;
-
 @Entity
-@Table(name= "practitioners")
+@Table(name = "practitioners")
 @Getter
 public class Practitioner implements Activatable {
     @Id
@@ -30,16 +29,20 @@ public class Practitioner implements Activatable {
     private String speciality;
     private boolean active;
 
-    @CreationTimestamp
-    private Instant createdAt;
-    @UpdateTimestamp
-    private Instant updatedAt;
+    @CreationTimestamp private Instant createdAt;
+    @UpdateTimestamp private Instant updatedAt;
 
     protected Practitioner() {}
 
-    protected Practitioner(String displayName, String speciality)
-    {
-        this.displayName = DomainText.normalizeRequired(displayName, "Displayname cant be null");
-        this.speciality = DomainText.normalizeRequired(speciality, "Speciality must be non null");
+    protected Practitioner(String displayName, String speciality) {
+        this.displayName = displayName;
+        this.speciality = speciality;
+    }
+
+    public static Practitioner from(String displayName, String speciality) {
+        displayName = DomainText.normalizeRequired(displayName, "Displayname cant be null");
+        speciality = DomainText.normalizeRequired(speciality, "Speciality must be non null");
+
+        return new Practitioner(displayName, speciality);
     }
 }

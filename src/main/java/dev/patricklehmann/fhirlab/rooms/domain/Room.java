@@ -8,17 +8,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.Instant;
-import java.util.UUID;
-
 @Entity
-@Table(name= "rooms")
+@Table(name = "rooms")
 @Getter
 public class Room implements Activatable {
     @Id
@@ -28,17 +27,20 @@ public class Room implements Activatable {
 
     @Column(name = "display_name", nullable = false, length = 200)
     private String displayName;
+
     private boolean active;
 
-    @CreationTimestamp
-    private Instant createdAt;
-    @UpdateTimestamp
-    private Instant updatedAt;
+    @CreationTimestamp private Instant createdAt;
+    @UpdateTimestamp private Instant updatedAt;
 
     protected Room() {}
 
-    protected Room(String displayName)
-    {
-        this.displayName = DomainText.normalizeRequired(displayName, "Displayname cant be null");
+    protected Room(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public static Room from(String displayName) {
+        displayName = DomainText.normalizeRequired(displayName, "Displayname cant be null");
+        return new Room(displayName);
     }
 }

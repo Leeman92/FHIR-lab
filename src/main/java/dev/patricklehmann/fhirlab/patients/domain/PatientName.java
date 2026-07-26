@@ -3,9 +3,8 @@ package dev.patricklehmann.fhirlab.patients.domain;
 import dev.patricklehmann.fhirlab.shared.domain.DomainText;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.Getter;
-
 import java.util.Objects;
+import lombok.Getter;
 
 @Embeddable
 @Getter
@@ -17,12 +16,18 @@ public class PatientName {
     @Column(name = "family_name", nullable = false, length = 100)
     private String familyName;
 
-    protected PatientName() {
+    protected PatientName() {}
+
+    protected PatientName(String givenName, String familyName) {
+        this.givenName = givenName;
+        this.familyName = familyName;
     }
 
-    public PatientName(String givenName, String familyName) {
-        this.givenName = DomainText.normalizeRequired(givenName, "Given name");
-        this.familyName = DomainText.normalizeRequired(familyName, "Family name");
+    public static PatientName from(String givenName, String familyName) {
+        givenName = DomainText.normalizeRequired(givenName, "Given name");
+        familyName = DomainText.normalizeRequired(familyName, "Family name");
+
+        return new PatientName(givenName, familyName);
     }
 
     public String getDisplayName() {
@@ -39,8 +44,7 @@ public class PatientName {
             return false;
         }
 
-        return givenName.equals(that.givenName)
-            && familyName.equals(that.familyName);
+        return givenName.equals(that.givenName) && familyName.equals(that.familyName);
     }
 
     @Override

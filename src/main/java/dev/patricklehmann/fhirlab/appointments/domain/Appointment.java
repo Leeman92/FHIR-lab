@@ -17,18 +17,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.Objects;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.Instant;
-import java.util.Objects;
-import java.util.UUID;
-
 @Entity
-@Table(name= "appointments")
+@Table(name = "appointments")
 @Getter
 public class Appointment {
     @Id
@@ -48,8 +47,7 @@ public class Appointment {
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
-    @Embedded
-    private AppointmentSlot appointmentSlot;
+    @Embedded private AppointmentSlot appointmentSlot;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -57,36 +55,50 @@ public class Appointment {
 
     private String reason;
 
-    @CreationTimestamp
-    private Instant createdAt;
-    @UpdateTimestamp
-    private Instant updatedAt;
+    @CreationTimestamp private Instant createdAt;
+    @UpdateTimestamp private Instant updatedAt;
 
-    protected Appointment() {}
+    protected Appointment(
+            Patient patient,
+            Practitioner practitioner,
+            Room examinationRoom,
+            AppointmentSlot slot,
+            String reason) {
+        this.patient = patient;
+        this.practitioner = practitioner;
+        this.room = examinationRoom;
+        this.reason = reason;
+        this.appointmentSlot = slot;
 
-    public Appointment(
-        Patient patient,
-        Practitioner practitioner,
-        Room examinationRoom,
-        AppointmentSlot slot,
-        String reason
-    ) {
         this.status = AppointmentStatus.BOOKED;
-
-        this.patient = requireActive(patient, "An appointment needs a patient");
-        this.practitioner = requireActive(practitioner, "An appointment needs a practitioner");
-        this.room = requireActive(examinationRoom, "An appointment needs a room");
-        this.reason = DomainText.normalizeOptional(reason);
-        this.appointmentSlot = Objects.requireNonNull(slot);
     }
 
-    private <T extends Activatable> T requireActive(T entity, String nullErrorMessage) {
+    public Appointment() {}
+
+    public static Appointment book(
+            Patient patient,
+            Practitioner practitioner,
+            Room examinationRoom,
+            AppointmentSlot slot,
+            String reason) {
+
+        patient = requireActive(patient, "An appointment needs a patient");
+        practitioner = requireActive(practitioner, "An appointment needs a practitioner");
+        examinationRoom = requireActive(examinationRoom, "An appointment needs a room");
+        reason = DomainText.normalizeOptional(reason);
+        Objects.requireNonNull(slot);
+
+        return new Appointment(patient, practitioner, examinationRoom, slot, reason);
+    }
+
+    private static <T extends Activatable> T requireActive(T entity, String nullErrorMessage) {
         if (entity == null) {
             throw new IllegalArgumentException(nullErrorMessage);
         }
 
         if (!entity.isActive()) {
-            throw new IllegalArgumentException(entity.getClass().getSimpleName()+ " must be active to create an appointment");
+            throw new IllegalArgumentException(
+                    entity.getClass().getSimpleName() + " must be active to create an appointment");
         }
 
         return entity;
