@@ -38,9 +38,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<Object> handleCustomException(
             CustomException exception, WebRequest request) {
-        log.error(exception.getLogMessage(), exception);
-
         ProblemDetail problem = exception.getProblemDetail();
+
+        log.error(problem.getDetail(), exception);
+
         return createResponseEntity(problem, HttpHeaders.EMPTY, exception.getStatus(), request);
     }
 

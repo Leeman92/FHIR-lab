@@ -1,6 +1,7 @@
 package dev.patricklehmann.fhirlab.patients.domain;
 
 import dev.patricklehmann.fhirlab.patients.api.CreatePatientRequest;
+import dev.patricklehmann.fhirlab.patients.application.exception.InvalidBirthdayException;
 import dev.patricklehmann.fhirlab.shared.domain.Activatable;
 import dev.patricklehmann.fhirlab.shared.domain.DomainText;
 import jakarta.persistence.Column;
@@ -85,11 +86,13 @@ public class Patient implements Activatable {
     }
 
     private static void validateBirthDate(LocalDate birthDate, LocalDate today) {
-        Objects.requireNonNull(birthDate, "Birth date must not be null");
+        if (birthDate == null) {
+            throw new InvalidBirthdayException(null);
+        }
         Objects.requireNonNull(today, "Current date must not be null");
 
         if (birthDate.isAfter(today)) {
-            throw new IllegalArgumentException("Birth date must not be in the future");
+            throw new InvalidBirthdayException(birthDate);
         }
     }
 }
