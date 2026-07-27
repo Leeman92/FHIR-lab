@@ -1,6 +1,6 @@
 package dev.patricklehmann.fhirlab.patients.domain;
 
-import dev.patricklehmann.fhirlab.patients.api.CreatePatientRequest;
+import dev.patricklehmann.fhirlab.patients.api.request.CreatePatientRequest;
 import dev.patricklehmann.fhirlab.patients.application.exception.InvalidBirthdayException;
 import dev.patricklehmann.fhirlab.shared.domain.Activatable;
 import dev.patricklehmann.fhirlab.shared.domain.DomainText;

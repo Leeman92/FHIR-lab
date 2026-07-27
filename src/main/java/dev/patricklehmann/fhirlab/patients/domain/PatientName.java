@@ -31,7 +31,7 @@ public class PatientName {
     }
 
     public String getDisplayName() {
-        return givenName + " " + familyName;
+        return givenName.trim() + " " + familyName.trim();
     }
 
     @Override

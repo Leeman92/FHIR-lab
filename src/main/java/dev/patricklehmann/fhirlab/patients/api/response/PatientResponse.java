@@ -1,4 +1,4 @@
-package dev.patricklehmann.fhirlab.patients.api;
+package dev.patricklehmann.fhirlab.patients.api.response;
 
 import dev.patricklehmann.fhirlab.patients.domain.Patient;
 import dev.patricklehmann.fhirlab.patients.domain.PatientName;

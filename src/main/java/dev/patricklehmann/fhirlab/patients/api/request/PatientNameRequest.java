@@ -1,4 +1,4 @@
-package dev.patricklehmann.fhirlab.patients.api;
+package dev.patricklehmann.fhirlab.patients.api.request;
 
 import jakarta.validation.constraints.NotBlank;
 
