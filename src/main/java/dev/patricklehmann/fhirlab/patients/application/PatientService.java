@@ -8,7 +8,6 @@ import dev.patricklehmann.fhirlab.patients.domain.Patient;
 import dev.patricklehmann.fhirlab.patients.infrastructure.persistence.PatientRepository;
 import dev.patricklehmann.fhirlab.patients.infrastructure.persistence.PatientSpecifications;
 import dev.patricklehmann.fhirlab.shared.application.exception.IdempotencyConflictException;
-
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -20,7 +19,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -34,11 +32,14 @@ public class PatientService {
 
     @Transactional(readOnly = true)
     public Patient getPatient(UUID patientId) {
-        return patientRepository.findById(patientId).orElseThrow(() -> new PatientNotFoundException(patientId));
+        return patientRepository
+                .findById(patientId)
+                .orElseThrow(() -> new PatientNotFoundException(patientId));
     }
 
     @Transactional
-    public PatientCreationResult createPatient(String idempotencyKey, CreatePatientRequest request) {
+    public PatientCreationResult createPatient(
+            String idempotencyKey, CreatePatientRequest request) {
         String uniqueFingerprint = createFingerprint(request);
 
         Optional<Patient> existingPatient = patientRepository.findByIdempotencyKey(idempotencyKey);
@@ -53,14 +54,20 @@ public class PatientService {
             throw new IdempotencyConflictException(idempotencyKey);
         }
 
-        Patient patient = Patient.register(request, LocalDate.now(clock), idempotencyKey, uniqueFingerprint);
+        Patient patient =
+                Patient.register(request, LocalDate.now(clock), idempotencyKey, uniqueFingerprint);
         patientRepository.save(patient);
 
         return new PatientCreationResult(patient, false);
     }
 
     String createFingerprint(CreatePatientRequest request) {
-        String normalized = request.name().givenName() + ":" + request.name().familyName() + ":" + request.birthDate().toString();
+        String normalized =
+                request.name().givenName()
+                        + ":"
+                        + request.name().familyName()
+                        + ":"
+                        + request.birthDate().toString();
 
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
