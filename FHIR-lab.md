@@ -2,11 +2,8 @@
 
 ## PraxisSlot – Terminverwaltung mit FHIR-Schnittstelle
 
-**Dokumentstatus:** Entwurf
-**Projektart:** Eigenständiges Lern- und Demonstrationsprojekt
-**Geplanter Umfang:** Umsetzbar innerhalb von ungefähr einer Woche
-**Referenzstandard:** HL7 FHIR R5
 **Version:** 1.0
+
 **Erstellt:** ChatGPT (einziges AI erstelltes Dokument)
 
 ---
