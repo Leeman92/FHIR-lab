@@ -4,6 +4,13 @@ import java.util.Optional;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.data.repository.Repository;
 
+/**
+ * Shared repository contract for the project's aggregates.
+ *
+ * <p>Extends the bare {@link Repository} marker rather than {@code CrudRepository} so the exposed
+ * surface is chosen explicitly: Spring Data implements only the methods declared here, which keeps
+ * accidental capability out of the persistence layer.
+ */
 @NoRepositoryBean
 public interface EntityRepository<T, ID> extends Repository<T, ID> {
     <S extends T> S save(S entity);

@@ -16,6 +16,13 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+/**
+ * A physical treatment room an appointment takes place in (spec §6.3).
+ *
+ * <p>The label is mandatory and unique across the application; uniqueness is enforced by the {@code
+ * uq_rooms_display_name} constraint rather than by a lookup, so it holds under concurrency. A
+ * deactivated room stays visible and keeps existing appointments, but accepts no new ones.
+ */
 @Entity
 @Table(name = "rooms")
 @Getter
@@ -33,12 +40,22 @@ public class Room implements Activatable {
     @CreationTimestamp private Instant createdAt;
     @UpdateTimestamp private Instant updatedAt;
 
+    /** Required by JPA; not for application use. */
     protected Room() {}
 
+    /** Assumes a normalised argument — go through {@link #from} instead. */
     protected Room(String displayName) {
         this.displayName = displayName;
     }
 
+    /**
+     * Builds a room with a normalised label.
+     *
+     * <p>As with {@code Practitioner.from}, the active flag is not set here, so the room is created
+     * inactive and could not currently be booked.
+     *
+     * @throws IllegalArgumentException if the label is null or blank
+     */
     public static Room from(String displayName) {
         displayName = DomainText.normalizeRequired(displayName, "Displayname cant be null");
         return new Room(displayName);

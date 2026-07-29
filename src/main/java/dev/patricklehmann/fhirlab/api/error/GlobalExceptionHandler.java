@@ -24,6 +24,14 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+/**
+ * Renders every failure outside the FHIR facade as an RFC 9457 problem detail (FR-029).
+ *
+ * <p>Each response carries a stable type URN, a title, a human-readable description, the status, a
+ * timestamp and the request id, with field-level errors added where they exist. Internal detail —
+ * stack traces, class names, SQL — never reaches the client (FR-032): anything that is not a {@code
+ * CustomException} is reported as a generic internal error and only the log keeps the cause.
+ */
 @NullMarked
 @Slf4j
 @RestControllerAdvice
@@ -31,11 +39,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     Clock clock;
 
+    /** The clock supplies the timestamp on every problem detail, so tests can pin it. */
     public GlobalExceptionHandler(Clock clock) {
         this.clock = clock;
     }
 
     @ExceptionHandler(CustomException.class)
+    /**
+     * Handles the project's own business failures, which decide their own status and presentation.
+     *
+     * <p>Note that this logs at {@code ERROR} with the client-facing detail, so a routine 404 is
+     * recorded as an error and personal data can reach the log; {@code
+     * CustomException.getLogMessage()} exists to avoid exactly that and is currently unused
+     * (NFR-006, NFR-010).
+     */
     public ResponseEntity<Object> handleCustomException(
             CustomException exception, WebRequest request) {
         ProblemDetail problem = exception.getProblemDetail();
@@ -46,6 +63,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
+    /**
+     * Last-resort handler for anything unforeseen (FR-031's internal error).
+     *
+     * <p>The cause is logged in full and the caller receives only a generic message plus the
+     * request id to quote. Because this catches {@code Exception}, a domain rule that throws a
+     * plain runtime exception silently becomes a 500 instead of a 4xx — such rules belong in a
+     * {@code CustomException} subclass.
+     */
     public ResponseEntity<Object> handleUnexpectedException(
             Exception exception, WebRequest request) {
         log.error("Unhandled exception while processing request", exception);
@@ -66,6 +91,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
+    /**
+     * Reports failed request validation as one response listing every offending field, so a caller
+     * does not have to discover mistakes one round-trip at a time (FR-030).
+     *
+     * <p>Only the first message per field is kept. Rules enforced in the domain rather than by a
+     * field constraint are not part of this collection.
+     */
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException exception,
             HttpHeaders headers,
@@ -90,6 +122,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
+    /**
+     * Completes every problem detail on its way out, including those produced by Spring's own
+     * handlers.
+     *
+     * <p>Adds the request id and timestamp, fills in the instance from the request path, and
+     * supplies a type URN where the originating handler left none, so that the shape of an error
+     * response is the same no matter which layer produced it (FR-029).
+     */
     protected ResponseEntity<Object> createResponseEntity(
             @Nullable Object body,
             HttpHeaders headers,

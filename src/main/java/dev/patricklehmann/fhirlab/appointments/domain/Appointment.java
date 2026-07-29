@@ -26,6 +26,18 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+/**
+ * A reserved period between one patient, one practitioner and one room (spec §6.4).
+ *
+ * <p>Exactly one of each participant is required, and all three must be active at booking time. An
+ * appointment is created as {@code BOOKED} and moves on from there; cancelling keeps the record and
+ * releases the period, while completing it or marking it as a no-show freezes it.
+ *
+ * <p>Overlap is not enforced here. Three {@code EXCLUDE} constraints in the schema make a
+ * double-booked patient, practitioner or room unrepresentable, which is what keeps two concurrent
+ * bookings from both succeeding (NFR-001) without the application taking locks. The Java-side rules
+ * exist to give callers a clear message first, not as the last line of defence.
+ */
 @Entity
 @Table(name = "appointments")
 @Getter
@@ -58,6 +70,7 @@ public class Appointment {
     @CreationTimestamp private Instant createdAt;
     @UpdateTimestamp private Instant updatedAt;
 
+    /** Assumes validated arguments — go through {@link #book} instead. */
     protected Appointment(
             Patient patient,
             Practitioner practitioner,
@@ -73,8 +86,22 @@ public class Appointment {
         this.status = AppointmentStatus.BOOKED;
     }
 
+    /** Required by JPA; not for application use. */
     public Appointment() {}
 
+    /**
+     * Books a new appointment with status {@code BOOKED} (FR-011).
+     *
+     * <p>Verifies that each participant is present and active; the reason is optional and
+     * normalised, with blank text stored as absent. The slot's own time rules are checked when the
+     * slot is built.
+     *
+     * <p>Two rules are not covered here yet: an appointment must begin in the future — which needs
+     * a clock this method does not receive — and it must not collide with another active
+     * appointment, which the database enforces.
+     *
+     * @throws IllegalArgumentException if a participant is missing or inactive
+     */
     public static Appointment book(
             Patient patient,
             Practitioner practitioner,
@@ -91,6 +118,10 @@ public class Appointment {
         return new Appointment(patient, practitioner, examinationRoom, slot, reason);
     }
 
+    /**
+     * Returns the entity if it is present and active, so that a deactivated patient, practitioner
+     * or room cannot be booked (spec §6.4).
+     */
     private static <T extends Activatable> T requireActive(T entity, String nullErrorMessage) {
         if (entity == null) {
             throw new IllegalArgumentException(nullErrorMessage);

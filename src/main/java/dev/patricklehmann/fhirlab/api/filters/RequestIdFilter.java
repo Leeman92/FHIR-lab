@@ -11,6 +11,14 @@ import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+/**
+ * Assigns every request a correlation id (NFR-004).
+ *
+ * <p>The id is echoed in the response header, put on the MDC so that all logging for the request
+ * carries it, and exposed as a request attribute for {@code GlobalExceptionHandler} to include in
+ * error responses. A caller may supply its own id, but only if it is a canonical UUID — see {@link
+ * #resolveRequestId}.
+ */
 @Component
 public class RequestIdFilter extends OncePerRequestFilter {
 
@@ -19,6 +27,10 @@ public class RequestIdFilter extends OncePerRequestFilter {
     public static final String MDC_KEY = "requestId";
 
     @Override
+    /**
+     * Establishes the request id for the duration of the request and clears the MDC afterwards, so
+     * the value cannot leak into unrelated work on a pooled thread.
+     */
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             HttpServletResponse response,
